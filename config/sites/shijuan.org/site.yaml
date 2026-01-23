@@ -1,0 +1,20 @@
+# 试卷网站点配置
+name: "试卷网"
+domain: shijuan.org
+sitemap_url: "https://www.shijuan.org/sitemap.xml"
+
+quotas:
+  baidu: 10
+  bing: 0
+  google: 0
+
+api:
+  baidu:
+    token: "Z8GNNjF99Oji19zi"
+    site: "https://www.shijuan.org"
+
+settings:
+  sitemap_cache_hours: 168
+  timeout: 30
+  concurrent: 3
+  log_level: info

@@ -14,9 +14,9 @@ import (
 
 // BaiduSubmitter 百度提交器
 type BaiduSubmitter struct {
-	client  *http.Client
-	token   string
-	site    string
+	client *http.Client
+	token  string
+	site   string
 }
 
 // BaiduResponse 百度API响应

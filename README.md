@@ -25,53 +25,81 @@
 
 ### 1. 构建程序
 
-**方式一：使用构建脚本（推荐）**
+**使用 Makefile（推荐）**
 
 ```bash
-./build.sh
+# 构建所有 macOS 版本
+make
+
+# 或者
+make build
 ```
 
-自动构建所有 macOS 版本，包含彩色输出和详细信息。
-
-**方式二：使用 Makefile**
-
+**快速构建：**
 ```bash
-# 构建所有版本
-make build
-
-# 快速构建当前平台版本
+# 仅构建当前平台
 make quick
 
 # 清理后重新构建
-make clean && make build
+make clean && make
 
 # 查看所有命令
 make help
 ```
 
-**方式三：手动构建**
-
-```bash
-go build -o submit-sitemap ./cmd/submit-sitemap
+**构建结果：**
+```
+dist/
+├── submit                  # 通用版本
+└── submit-darwin-arm64     # Apple Silicon 版本
 ```
 
-**构建结果：**
-- `submit-sitemap` - 当前平台通用版本
-- `dist/submit-sitemap-darwin-arm64` - Apple Silicon 版本
+**其他平台：**
+```bash
+# 构建所有平台版本（macOS/Linux/Windows）
+make build-all
+```
 
-### 2. 配置
+### 2. 首次运行
 
-为你的网站创建配置文件：
+程序首次运行时会自动在用户主目录创建配置：
 
 ```bash
+# 首次运行会自动初始化
+./submit test
+
+# 或者任何命令都会触发初始化
+./submit run
+```
+
+程序会在 `~/.submit/` 创建以下目录结构：
+```
+~/.submit/
+├── config/
+│   └── sites/
+│       └── _template/
+│           └── site.yaml.example
+└── data/
+    ├── logs/
+    └── submitted/
+```
+
+### 3. 配置网站
+
+创建你的网站配置：
+
+```bash
+# 进入配置目录
+cd ~/.submit/config/sites
+
 # 创建网站配置目录
-mkdir -p config/sites/example.com
+mkdir example.com
 
-# 复制配置模板
-cp config/sites/_template/site.yaml.example config/sites/example.com/site.yaml
+# 复制模板
+cp _template/site.yaml.example example.com/site.yaml
 
-# 编辑配置文件
-vim config/sites/example.com/site.yaml
+# 编辑配置
+vim example.com/site.yaml
 ```
 
 配置文件示例：
@@ -108,12 +136,36 @@ settings:
   log_level: info
 ```
 
-> **注意**：每个网站使用独立的配置文件，程序会自动遍历 `config/sites/` 目录下的所有 `.yaml` 文件。
+> **注意**：
+> - 每个网站使用独立的配置文件
+> - 配置文件位于：`~/.submit/config/sites/`
+> - 程序会自动遍历该目录下所有 `.yaml` 文件
+> - 日志文件位于：`~/.submit/data/logs/`
+> - 历史记录位于：`~/.submit/data/submitted/`
 
-### 3. 运行
+### 4. 运行
 
 ```bash
-./submit-sitemap run
+# 运行提交任务
+./submit run
+
+# 详细模式
+./submit run -v
+
+# 查看统计
+./submit stats
+
+# 测试配置
+./submit test
+```
+
+**查看日志：**
+```bash
+# 查看今天的日志
+cat ~/.submit/data/logs/$(date +%Y-%m-%d).log
+
+# 实时监控
+tail -f ~/.submit/data/logs/$(date +%Y-%m-%d).log
 ```
 
 ## 📖 使用说明
@@ -122,51 +174,59 @@ settings:
 
 ```bash
 # 运行提交任务（基本模式）
-./submit-sitemap run
+./dist/submit run
 
 # 详细输出模式（同时显示日志到控制台）
-./submit-sitemap run -v
+./dist/submit run -v
 
 # 查看提交统计
-./submit-sitemap stats
+./dist/submit stats
 
 # 测试配置文件
-./submit-sitemap test
+./dist/submit test
 
 # 清除指定站点的历史记录
-./submit-sitemap reset example.com
+./dist/submit reset example.com
 
 # 显示帮助
-./submit-sitemap help
+./dist/submit help
 ```
 
 ### 高级选项
 
 ```bash
 # 使用自定义配置目录
-./submit-sitemap run -c /path/to/config/sites
+./dist/submit run -c /path/to/config/sites
 
 # 详细输出模式 + 自定义配置
-./submit-sitemap run -v -c /path/to/config/sites
+./dist/submit run -v -c /path/to/config/sites
 ```
 
-### 配置目录查找
+### 配置目录
 
-程序会按以下顺序自动查找配置目录：
+程序使用用户主目录下的 `.submit` 文件夹存储所有配置和数据：
 
-1. 命令行参数 `-c` 指定的路径
-2. 从当前目录向上查找 `config/sites/` 目录（最多5级）
-3. 从当前目录向上查找 `config/` 目录（兼容性）
-4. 使用默认路径 `config/sites`
+```
+~/.submit/
+├── config/sites/          # 配置目录
+│   ├── _template/         # 模板文件
+│   ├── site1.com/        # 网站1配置
+│   └── site2.com/        # 网站2配置
+└── data/
+    ├── logs/             # 日志文件
+    └── submitted/        # 提交历史
+```
 
-这意味着你可以从项目的任何子目录运行程序，例如：
-
+**自定义配置目录：**
 ```bash
-# 从项目根目录运行
-./submit-sitemap run
+# 使用自定义位置
+./submit run -c /path/to/config/sites
+```
 
-# 从 dist 目录运行（会自动向上查找配置）
-cd dist && ./submit run
+**迁移现有配置：**
+```bash
+# 如果你之前使用项目目录下的配置
+cp -r config/sites/* ~/.submit/config/sites/
 ```
 
 ### 日志文件
@@ -296,7 +356,7 @@ settings:
 crontab -e
 
 # 添加定时任务（每天早上9点运行）
-0 9 * * * cd /path/to/submit-sitemap && ./submit-sitemap run >> data/logs/cron.log 2>&1
+0 9 * * * cd /path/to/submit-sitemap && ./dist/submit run >> data/logs/cron.log 2>&1
 ```
 
 ### 配额建议
@@ -323,7 +383,7 @@ vim config/sites/blog.example.com/site.yaml
 程序运行时会自动发现并加载所有站点配置：
 
 ```bash
-./submit-sitemap run
+./dist/submit run
 # 📂 配置目录: /path/to/config/sites
 # 📝 加载了 2 个站点配置
 # 📦 处理网站 [1/2]: 主站 (example.com)
@@ -351,7 +411,7 @@ vim config/sites/blog.example.com/site.yaml
 如需重新提交所有URL，可以清除历史记录：
 
 ```bash
-./submit-sitemap reset example.com
+./dist/submit reset example.com
 ```
 
 ## 📝 开发说明
