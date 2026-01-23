@@ -49,45 +49,21 @@ func (b *BaiduSubmitter) Submit(urls []string) types.SubmitResult {
 		return result
 	}
 
-	// 百度API地址
-	apiURL := fmt.Sprintf("http://data.zz.baidu.com/urls?site=%s&token=%s", b.site, b.token)
-
-	// 准备请求体（每行一个URL）
-	body := strings.Join(urls, "\n")
-
-	// 创建请求
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBufferString(body))
+	baiduResp, statusCode, respBody, err := b.submitRaw(urls)
 	if err != nil {
-		result.Error = fmt.Errorf("创建请求失败: %w", err)
+		result.Error = err
 		result.FailedCount = len(urls)
+		result.FailedURLs = append(result.FailedURLs, urls...)
 		return result
 	}
 
-	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Set("User-Agent", "Submit-Sitemap-Bot/1.0")
-
-	// 发送请求
-	resp, err := b.client.Do(req)
-	if err != nil {
-		result.Error = fmt.Errorf("发送请求失败: %w", err)
+	if statusCode != http.StatusOK {
+		if statusCode == http.StatusBadRequest && isOverQuota(respBody) && len(urls) > 1 {
+			return b.submitOneByOne(urls)
+		}
+		result.Error = fmt.Errorf("HTTP错误 - 状态码: %d, 响应: %s", statusCode, string(respBody))
 		result.FailedCount = len(urls)
-		return result
-	}
-	defer resp.Body.Close()
-
-	// 读取响应
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		result.Error = fmt.Errorf("读取响应失败: %w", err)
-		result.FailedCount = len(urls)
-		return result
-	}
-
-	// 解析响应
-	var baiduResp BaiduResponse
-	if err := json.Unmarshal(respBody, &baiduResp); err != nil {
-		result.Error = fmt.Errorf("解析响应失败: %w (响应: %s)", err, string(respBody))
-		result.FailedCount = len(urls)
+		result.FailedURLs = append(result.FailedURLs, urls...)
 		return result
 	}
 
@@ -99,7 +75,106 @@ func (b *BaiduSubmitter) Submit(urls []string) types.SubmitResult {
 	result.FailedURLs = append(result.FailedURLs, baiduResp.NotSameSite...)
 	result.FailedURLs = append(result.FailedURLs, baiduResp.NotValid...)
 
+	// 如果有失败的URL，添加错误信息
+	if len(result.FailedURLs) > 0 {
+		failedInfo := fmt.Sprintf("not_same_site: %d, not_valid: %d, remain: %d",
+			len(baiduResp.NotSameSite), len(baiduResp.NotValid), baiduResp.Remain)
+		result.Error = fmt.Errorf("部分URL提交失败: %s", failedInfo)
+	}
+
 	return result
+}
+
+func (b *BaiduSubmitter) submitRaw(urls []string) (BaiduResponse, int, []byte, error) {
+	var empty BaiduResponse
+
+	apiURL := fmt.Sprintf("http://data.zz.baidu.com/urls?site=%s&token=%s", b.site, b.token)
+	body := strings.Join(urls, "\n")
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBufferString(body))
+	if err != nil {
+		return empty, 0, nil, fmt.Errorf("创建请求失败: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "text/plain")
+
+	resp, err := b.client.Do(req)
+	if err != nil {
+		return empty, 0, nil, fmt.Errorf("发送请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return empty, resp.StatusCode, nil, fmt.Errorf("读取响应失败: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return empty, resp.StatusCode, respBody, nil
+	}
+
+	var baiduResp BaiduResponse
+	if err := json.Unmarshal(respBody, &baiduResp); err != nil {
+		return empty, resp.StatusCode, respBody, fmt.Errorf("解析响应失败: %w (响应: %s)", err, string(respBody))
+	}
+
+	return baiduResp, resp.StatusCode, respBody, nil
+}
+
+func (b *BaiduSubmitter) submitOneByOne(urls []string) types.SubmitResult {
+	result := types.SubmitResult{
+		Platform:   "百度",
+		TotalCount: len(urls),
+	}
+
+	for i, u := range urls {
+		baiduResp, statusCode, respBody, err := b.submitRaw([]string{u})
+		if err != nil {
+			result.Error = err
+			result.FailedURLs = append(result.FailedURLs, urls[i:]...)
+			result.FailedCount = len(result.FailedURLs)
+			return result
+		}
+
+		if statusCode != http.StatusOK {
+			if statusCode == http.StatusBadRequest && isOverQuota(respBody) {
+				result.Error = fmt.Errorf("over quota")
+				result.FailedURLs = append(result.FailedURLs, urls[i:]...)
+				result.FailedCount = len(result.FailedURLs)
+				return result
+			}
+			result.Error = fmt.Errorf("HTTP错误 - 状态码: %d, 响应: %s", statusCode, string(respBody))
+			result.FailedURLs = append(result.FailedURLs, u)
+			result.FailedCount++
+			continue
+		}
+
+		if baiduResp.Success > 0 {
+			result.SuccessCount += baiduResp.Success
+			continue
+		}
+
+		if len(baiduResp.NotSameSite) > 0 || len(baiduResp.NotValid) > 0 {
+			result.FailedURLs = append(result.FailedURLs, baiduResp.NotSameSite...)
+			result.FailedURLs = append(result.FailedURLs, baiduResp.NotValid...)
+			result.FailedCount += len(baiduResp.NotSameSite) + len(baiduResp.NotValid)
+			continue
+		}
+
+		result.FailedURLs = append(result.FailedURLs, u)
+		result.FailedCount++
+	}
+
+	if result.FailedCount > 0 {
+		result.Error = fmt.Errorf("部分URL提交失败: %d", result.FailedCount)
+	}
+
+	return result
+}
+
+func isOverQuota(respBody []byte) bool {
+	msg := strings.ToLower(string(respBody))
+	return strings.Contains(msg, "over quota")
 }
 
 // Name 返回提交器名称

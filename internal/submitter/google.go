@@ -15,19 +15,27 @@ import (
 // 注意: Google官方的Indexing API仅支持特定类型内容
 // 这里使用IndexNow协议，虽然Google目前不支持，但保留接口便于未来扩展
 type GoogleSubmitter struct {
-	client *http.Client
-	apiKey string
-	host   string
+	client      *http.Client
+	apiKey      string
+	host        string
+	keyLocation string
 }
 
 // NewGoogleSubmitter 创建Google提交器
-func NewGoogleSubmitter(apiKey, host string, timeout int) *GoogleSubmitter {
+func NewGoogleSubmitter(config types.GoogleConfig, timeout int) *GoogleSubmitter {
+	keyLocation := config.KeyLocation
+	// 如果没有配置 keyLocation，使用默认格式
+	if keyLocation == "" {
+		keyLocation = fmt.Sprintf("https://%s/%s.txt", config.Host, config.APIKey)
+	}
+
 	return &GoogleSubmitter{
 		client: &http.Client{
 			Timeout: time.Duration(timeout) * time.Second,
 		},
-		apiKey: apiKey,
-		host:   host,
+		apiKey:      config.APIKey,
+		host:        config.Host,
+		keyLocation: keyLocation,
 	}
 }
 
@@ -50,7 +58,7 @@ func (g *GoogleSubmitter) Submit(urls []string) types.SubmitResult {
 	reqBody := IndexNowRequest{
 		Host:        g.host,
 		Key:         g.apiKey,
-		KeyLocation: fmt.Sprintf("https://%s/%s.txt", g.host, g.apiKey),
+		KeyLocation: g.keyLocation,
 		URLList:     urls,
 	}
 

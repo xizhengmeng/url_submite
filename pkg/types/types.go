@@ -2,10 +2,16 @@ package types
 
 import "time"
 
-// Config 主配置结构
+// Config 主配置结构（运行时使用，包含所有站点）
 type Config struct {
 	Sites    []SiteConfig    `yaml:"sites"`
 	Settings GlobalSettings  `yaml:"settings"`
+}
+
+// SiteConfigFile 单个站点配置文件结构（用于读取单个配置文件）
+type SiteConfigFile struct {
+	SiteConfig `yaml:",inline"`
+	Settings   *GlobalSettings `yaml:"settings,omitempty"`
 }
 
 // SiteConfig 单个网站配置
@@ -37,14 +43,18 @@ type BaiduConfig struct {
 	Site  string `yaml:"site"`
 }
 
-// BingConfig Bing API配置
+// BingConfig Bing API配置 (IndexNow)
 type BingConfig struct {
-	APIKey string `yaml:"api_key"`
+	APIKey      string `yaml:"api_key"`
+	Host        string `yaml:"host"`
+	KeyLocation string `yaml:"key_location"`
 }
 
 // GoogleConfig Google/IndexNow API配置
 type GoogleConfig struct {
-	APIKey string `yaml:"api_key"`
+	APIKey      string `yaml:"api_key"`
+	Host        string `yaml:"host"`
+	KeyLocation string `yaml:"key_location"`
 }
 
 // GlobalSettings 全局设置

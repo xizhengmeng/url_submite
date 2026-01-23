@@ -1,0 +1,43 @@
+# 课本网站点配置
+name: "课本网"
+domain: kebenwang.cn
+sitemap_url: "https://www.kebenwang.cn/sitemap.xml"
+
+# 每日提交配额（每个平台单独配置）
+quotas:
+  baidu: 10      # 百度每天提交100条
+  bing: 0      # Bing每天提交200条
+  google: 0     # Google每天提交150条
+
+# API配置
+api:
+  baidu:
+    # 百度站长平台获取token: https://ziyuan.baidu.com/linksubmit/index
+    token: "Z8GNNjF99Oji19zi"
+    site: "https://www.kebenwang.cn"
+
+  # bing:
+  #   # IndexNow API Key: https://www.indexnow.org/
+  #   api_key: "9d8d89d53cd1f77b63f949ee80e64d5f"
+  #   host: "www.kebenwang.cn"
+  #   key_location: "https://www.kebenwang.cn/9d8d89d53cd1f77b63f949ee80e64d5f.txt"
+
+  # google:
+  #   # IndexNow API Key（与Bing共用）: https://www.indexnow.org/
+  #   api_key: "9d8d89d53cd1f77b63f949ee80e64d5f"
+  #   host: "www.kebenwang.cn"
+  #   key_location: "https://www.kebenwang.cn/9d8d89d53cd1f77b63f949ee80e64d5f.txt"
+
+# 全局设置（可选，如果不设置则使用系统默认值）
+settings:
+  # Sitemap缓存时间（小时）
+  sitemap_cache_hours: 168  # 7天 (7*24)
+
+  # 请求超时时间（秒）
+  timeout: 30
+
+  # 并发数
+  concurrent: 3
+
+  # 日志级别: debug, info, warn, error
+  log_level: info

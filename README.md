@@ -61,34 +61,54 @@ go build -o submit-sitemap ./cmd/submit-sitemap
 
 ### 2. 配置
 
-复制配置示例文件：
+为你的网站创建配置文件：
 
 ```bash
-cp config/config.example.yaml config/config.yaml
+# 创建网站配置目录
+mkdir -p config/sites/example.com
+
+# 复制配置模板
+cp config/sites/_template/site.yaml.example config/sites/example.com/site.yaml
+
+# 编辑配置文件
+vim config/sites/example.com/site.yaml
 ```
 
-编辑 `config/config.yaml`，填入你的网站信息和API密钥：
+配置文件示例：
 
 ```yaml
-sites:
-  - name: "我的网站"
-    domain: example.com
-    sitemap_url: "https://example.com/sitemap.xml"
+name: "我的网站"
+domain: example.com
+sitemap_url: "https://example.com/sitemap.xml"
 
-    quotas:
-      baidu: 100   # 每天提交100条到百度
-      bing: 200    # 每天提交200条到Bing
-      google: 150  # 每天提交150条到Google
+quotas:
+  baidu: 100   # 每天提交100条到百度
+  bing: 200    # 每天提交200条到Bing
+  google: 150  # 每天提交150条到Google
 
-    api:
-      baidu:
-        token: "your-baidu-token"
-        site: "https://example.com"
-      bing:
-        api_key: "your-bing-api-key"
-      google:
-        api_key: "your-indexnow-key"
+api:
+  baidu:
+    token: "your-baidu-token"
+    site: "https://example.com"
+
+  bing:
+    api_key: "your-indexnow-key"
+    host: "example.com"
+    key_location: "https://example.com/your-key.txt"
+
+  google:
+    api_key: "your-indexnow-key"
+    host: "example.com"
+    key_location: "https://example.com/your-key.txt"
+
+settings:
+  sitemap_cache_hours: 168
+  timeout: 30
+  concurrent: 3
+  log_level: info
 ```
+
+> **注意**：每个网站使用独立的配置文件，程序会自动遍历 `config/sites/` 目录下的所有 `.yaml` 文件。
 
 ### 3. 运行
 
@@ -123,11 +143,30 @@ sites:
 ### 高级选项
 
 ```bash
-# 使用自定义配置文件
-./submit-sitemap run -c /path/to/config.yaml
+# 使用自定义配置目录
+./submit-sitemap run -c /path/to/config/sites
 
 # 详细输出模式 + 自定义配置
-./submit-sitemap run -v -c /path/to/config.yaml
+./submit-sitemap run -v -c /path/to/config/sites
+```
+
+### 配置目录查找
+
+程序会按以下顺序自动查找配置目录：
+
+1. 命令行参数 `-c` 指定的路径
+2. 从当前目录向上查找 `config/sites/` 目录（最多5级）
+3. 从当前目录向上查找 `config/` 目录（兼容性）
+4. 使用默认路径 `config/sites`
+
+这意味着你可以从项目的任何子目录运行程序，例如：
+
+```bash
+# 从项目根目录运行
+./submit-sitemap run
+
+# 从 dist 目录运行（会自动向上查找配置）
+cd dist && ./submit run
 ```
 
 ### 日志文件
@@ -177,12 +216,19 @@ submit-sitemap/
 │   ├── config/              # 配置管理
 │   ├── sitemap/             # Sitemap解析器
 │   ├── history/             # 历史记录管理
+│   ├── logger/              # 日志系统
 │   └── submitter/           # 搜索引擎提交器
 ├── pkg/
 │   └── types/               # 公共类型定义
 ├── config/
-│   ├── config.yaml          # 配置文件（需自行创建）
-│   └── config.example.yaml  # 配置示例
+│   └── sites/               # 站点配置目录（新架构）
+│       ├── kebenwang.cn/    # 示例：课本网配置
+│       │   └── site.yaml
+│       ├── example.com/     # 示例：其他网站配置
+│       │   └── site.yaml
+│       ├── _template/       # 配置模板
+│       │   └── site.yaml.example
+│       └── README.md        # 配置说明
 ├── data/                    # 数据目录
 │   ├── submitted/           # 已提交URL记录
 │   │   └── example.com/
@@ -190,7 +236,11 @@ submit-sitemap/
 │   │       ├── bing.txt
 │   │       └── google.txt
 │   └── logs/                # 日志文件
-└── submit-sitemap           # 可执行文件
+├── dist/                    # 编译输出目录
+│   └── submit              # 可执行文件
+├── docs/                    # 文档
+│   └── CONFIG_MIGRATION.md  # 配置迁移指南
+└── submit-sitemap           # 可执行文件（根目录）
 ```
 
 ## ⚙️ 配置说明
@@ -257,18 +307,30 @@ crontab -e
 
 ### 多站点管理
 
-可以在一个配置文件中管理多个网站：
+每个网站使用独立的配置文件，添加新站点非常简单：
 
-```yaml
-sites:
-  - name: "主站"
-    domain: example.com
-    # ...
+```bash
+# 创建新站点配置目录
+mkdir -p config/sites/blog.example.com
 
-  - name: "博客"
-    domain: blog.example.com
-    # ...
+# 复制模板
+cp config/sites/_template/site.yaml.example config/sites/blog.example.com/site.yaml
+
+# 编辑配置
+vim config/sites/blog.example.com/site.yaml
 ```
+
+程序运行时会自动发现并加载所有站点配置：
+
+```bash
+./submit-sitemap run
+# 📂 配置目录: /path/to/config/sites
+# 📝 加载了 2 个站点配置
+# 📦 处理网站 [1/2]: 主站 (example.com)
+# 📦 处理网站 [2/2]: 博客 (blog.example.com)
+```
+
+> **提示**：查看 [配置迁移指南](docs/CONFIG_MIGRATION.md) 了解从旧版本配置迁移的详细步骤。
 
 ## 🐛 故障排除
 

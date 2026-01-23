@@ -13,9 +13,10 @@ import (
 
 // BingSubmitter Bing提交器 (使用IndexNow协议)
 type BingSubmitter struct {
-	client *http.Client
-	apiKey string
-	host   string
+	client      *http.Client
+	apiKey      string
+	host        string
+	keyLocation string
 }
 
 // IndexNowRequest IndexNow API请求结构
@@ -27,13 +28,20 @@ type IndexNowRequest struct {
 }
 
 // NewBingSubmitter 创建Bing提交器
-func NewBingSubmitter(apiKey, host string, timeout int) *BingSubmitter {
+func NewBingSubmitter(config types.BingConfig, timeout int) *BingSubmitter {
+	keyLocation := config.KeyLocation
+	// 如果没有配置 keyLocation，使用默认格式
+	if keyLocation == "" {
+		keyLocation = fmt.Sprintf("https://%s/%s.txt", config.Host, config.APIKey)
+	}
+
 	return &BingSubmitter{
 		client: &http.Client{
 			Timeout: time.Duration(timeout) * time.Second,
 		},
-		apiKey: apiKey,
-		host:   host,
+		apiKey:      config.APIKey,
+		host:        config.Host,
+		keyLocation: keyLocation,
 	}
 }
 
@@ -55,7 +63,7 @@ func (b *BingSubmitter) Submit(urls []string) types.SubmitResult {
 	reqBody := IndexNowRequest{
 		Host:        b.host,
 		Key:         b.apiKey,
-		KeyLocation: fmt.Sprintf("https://%s/%s.txt", b.host, b.apiKey),
+		KeyLocation: b.keyLocation,
 		URLList:     urls,
 	}
 
@@ -65,6 +73,17 @@ func (b *BingSubmitter) Submit(urls []string) types.SubmitResult {
 		result.FailedCount = len(urls)
 		return result
 	}
+
+	// 记录请求详情（用于调试）
+	keyPreview := b.apiKey
+	if len(keyPreview) > 8 {
+		keyPreview = keyPreview[:8] + "***"
+	}
+	fmt.Printf("    [调试] 请求URL: %s\n", apiURL)
+	fmt.Printf("    [调试] Host: %s\n", b.host)
+	fmt.Printf("    [调试] Key: %s\n", keyPreview)
+	fmt.Printf("    [调试] KeyLocation: %s\n", b.keyLocation)
+	fmt.Printf("    [调试] URL数量: %d\n", len(urls))
 
 	// 创建请求
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))

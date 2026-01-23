@@ -1,0 +1,140 @@
+# 站点配置模板
+# 使用方法：
+# 1. 创建新站点目录: mkdir -p config/sites/yourdomain.com
+# 2. 复制此文件: cp config/sites/_template/site.yaml.example config/sites/yourdomain.com/site.yaml
+# 3. 编辑配置: vim config/sites/yourdomain.com/site.yaml
+
+# 站点名称（显示用）
+name: "示例网站"
+
+# 域名（用于标识，不含协议）
+domain: example.com
+
+# Sitemap URL
+sitemap_url: "https://example.com/sitemap.xml"
+
+# 每日提交配额（每个平台单独配置）
+# ⚠️ 设置为 0 表示不提交到该平台
+quotas:
+  baidu: 100      # 百度每天提交100条
+  bing: 200       # Bing每天提交200条
+  google: 150     # Google每天提交150条
+
+# API配置
+# ⚠️ 重要提示：
+# - 所有必需字段都必须填写，否则该平台会被跳过
+# - 如果不想提交到某个平台，建议将对应的 quotas 设为 0
+
+api:
+  # 百度站长平台配置
+  baidu:
+    # 获取方式: https://ziyuan.baidu.com/linksubmit/index
+    # 必需字段: token, site
+    token: "your-baidu-token"              # 必填
+    site: "https://example.com"            # 必填，必须与站长平台配置一致
+
+  # Bing IndexNow 配置
+  bing:
+    # IndexNow 协议: https://www.indexnow.org/
+    # 生成 API Key: openssl rand -hex 16
+    # 必需字段: api_key, host
+    api_key: "your-indexnow-key"           # 必填
+    host: "example.com"                    # 必填，注意不要包含 www 或协议
+    key_location: "https://example.com/your-indexnow-key.txt"  # 可选，默认自动生成
+
+  # Google IndexNow 配置
+  # 注意：Google 目前可能不完全支持 IndexNow 协议
+  google:
+    # 可与 Bing 共用同一个 IndexNow Key
+    # 必需字段: api_key, host
+    api_key: "your-indexnow-key"           # 必填
+    host: "example.com"                    # 必填
+    key_location: "https://example.com/your-indexnow-key.txt"  # 可选，默认自动生成
+
+# 全局设置（可选，如果不设置则使用系统默认值）
+settings:
+  # Sitemap缓存时间（小时）
+  sitemap_cache_hours: 168  # 7天 (7*24)
+
+  # 请求超时时间（秒）
+  timeout: 30
+
+  # 并发数
+  concurrent: 3
+
+  # 日志级别: debug, info, warn, error
+  log_level: info
+
+# ========================================
+# 配置示例说明
+# ========================================
+
+# 示例 1: 只提交到百度
+# quotas:
+#   baidu: 100
+#   bing: 0       # 不提交
+#   google: 0     # 不提交
+#
+# api:
+#   baidu:
+#     token: "..."
+#     site: "..."
+#   # bing 和 google 可以不配置或留空
+
+# 示例 2: 只提交到 Bing 和 Google
+# quotas:
+#   baidu: 0      # 不提交
+#   bing: 200
+#   google: 150
+#
+# api:
+#   # baidu 可以不配置或留空
+#   bing:
+#     api_key: "..."
+#     host: "..."
+#   google:
+#     api_key: "..."
+#     host: "..."
+
+# 示例 3: 注释掉不需要的平台
+# quotas:
+#   baidu: 100
+#   # bing: 200    # 注释掉
+#   # google: 150  # 注释掉
+#
+# api:
+#   baidu:
+#     token: "..."
+#     site: "..."
+#   # bing 和 google 配置全部注释掉
+
+# ========================================
+# IndexNow 配置步骤
+# ========================================
+
+# 1. 生成 API Key
+#    openssl rand -hex 16
+#    输出示例: 9d8d89d53cd1f77b63f949ee80e64d5f
+
+# 2. 创建验证文件
+#    echo "9d8d89d53cd1f77b63f949ee80e64d5f" > 9d8d89d53cd1f77b63f949ee80e64d5f.txt
+
+# 3. 上传到网站根目录
+#    上传后应能访问: https://example.com/9d8d89d53cd1f77b63f949ee80e64d5f.txt
+
+# 4. 配置到 yaml 中
+#    api:
+#      bing:
+#        api_key: "9d8d89d53cd1f77b63f949ee80e64d5f"
+#        host: "example.com"
+#        key_location: "https://example.com/9d8d89d53cd1f77b63f949ee80e64d5f.txt"
+
+# ========================================
+# 故障排除
+# ========================================
+
+# 如果遇到问题，请查看：
+# - docs/TROUBLESHOOTING.md - 故障排除指南
+# - data/logs/YYYY-MM-DD.log - 详细日志文件
+# - 运行 ./submit test 测试配置
+# - 运行 ./submit run -v 查看详细输出
