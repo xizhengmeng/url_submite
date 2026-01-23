@@ -1,0 +1,35 @@
+# Binaries
+submit-sitemap
+submit-sitemap-*
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Data directory (contains history and logs)
+data/
+
+# Config file (may contain sensitive API keys)
+config/config.yaml
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go workspace
+go.work
+go.work.sum

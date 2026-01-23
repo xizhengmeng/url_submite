@@ -1,0 +1,61 @@
+# Submit Sitemap Configuration Example
+
+sites:
+  # 第一个网站配置
+  - name: "示例网站1"
+    domain: example.com
+    sitemap_url: "https://example.com/sitemap.xml"
+
+    # 每日提交配额（每个平台单独配置）
+    quotas:
+      baidu: 100      # 百度每天提交100条
+      bing: 200       # Bing每天提交200条
+      google: 150     # Google每天提交150条
+
+    # API配置
+    api:
+      baidu:
+        # 百度站长平台获取token: https://ziyuan.baidu.com/linksubmit/index
+        token: "your-baidu-token"
+        site: "https://example.com"
+
+      bing:
+        # Bing Webmaster Tools API Key: https://www.bing.com/webmasters
+        api_key: "your-bing-api-key"
+
+      google:
+        # IndexNow API Key 或 Google Indexing API
+        api_key: "your-indexnow-key"
+
+  # 第二个网站配置
+  - name: "示例网站2"
+    domain: blog.example.com
+    sitemap_url: "https://blog.example.com/sitemap.xml"
+
+    quotas:
+      baidu: 50
+      bing: 100
+      google: 80
+
+    api:
+      baidu:
+        token: "your-baidu-token-2"
+        site: "https://blog.example.com"
+      bing:
+        api_key: "your-bing-api-key-2"
+      google:
+        api_key: "your-indexnow-key-2"
+
+# 全局设置
+settings:
+  # Sitemap缓存时间（小时）
+  sitemap_cache_hours: 168  # 7天 (7*24)
+
+  # 请求超时时间（秒）
+  timeout: 30
+
+  # 并发数
+  concurrent: 3
+
+  # 日志级别: debug, info, warn, error
+  log_level: info

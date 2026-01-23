@@ -1,0 +1,38 @@
+Submit Sitemap - 项目文件清单
+=======================================
+
+构建和配置文件：
+  ✓ build.sh              - 构建脚本（彩色输出，详细信息）
+  ✓ Makefile              - Make构建工具（简洁快速）
+  ✓ .gitignore            - Git忽略规则
+  ✓ go.mod / go.sum       - Go模块依赖
+
+文档文件：
+  ✓ README.md             - 完整项目文档
+  ✓ QUICKSTART.md         - 快速开始指南
+  ✓ config/config.example.yaml - 配置示例
+
+源代码：
+  ✓ cmd/submit-sitemap/main.go        - 主程序
+  ✓ pkg/types/types.go                - 类型定义
+  ✓ internal/config/config.go         - 配置管理
+  ✓ internal/sitemap/parser.go        - Sitemap解析
+  ✓ internal/history/history.go       - 历史记录
+  ✓ internal/submitter/submitter.go   - 提交器接口
+  ✓ internal/submitter/baidu.go       - 百度提交
+  ✓ internal/submitter/bing.go        - Bing提交
+  ✓ internal/submitter/google.go      - Google提交
+
+构建产物（gitignore已忽略）：
+  • submit-sitemap                     - 通用版本
+  • build/submit-sitemap-darwin-amd64  - Intel Mac
+  • build/submit-sitemap-darwin-arm64  - Apple Silicon
+
+数据目录（gitignore已忽略）：
+  • data/submitted/                    - 已提交URL记录
+  • data/logs/                         - 运行日志
+
+快速构建命令：
+  ./build.sh                           - 推荐（详细输出）
+  make                                 - 简洁快速
+  make quick                           - 仅当前平台
