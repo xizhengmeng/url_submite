@@ -57,8 +57,7 @@ go build -o submit-sitemap ./cmd/submit-sitemap
 
 **构建结果：**
 - `submit-sitemap` - 当前平台通用版本
-- `build/submit-sitemap-darwin-amd64` - Intel Mac 版本
-- `build/submit-sitemap-darwin-arm64` - Apple Silicon 版本
+- `dist/submit-sitemap-darwin-arm64` - Apple Silicon 版本
 
 ### 2. 配置
 

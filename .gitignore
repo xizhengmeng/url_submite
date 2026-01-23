@@ -1,7 +1,7 @@
 # Binaries
 submit-sitemap
 submit-sitemap-*
-build/
+dist/
 *.exe
 *.dll
 *.so

@@ -1,20 +1,17 @@
 .PHONY: all build clean test run help install
 
 APP_NAME := submit-sitemap
-BUILD_DIR := build
+BUILD_DIR := dist
 CMD_PATH := ./cmd/submit-sitemap
 VERSION := 1.0.0
 
 # 默认目标
 all: build
 
-# 构建所有版本
+# 构建 Apple Silicon 版本
 build:
-	@echo "🚀 开始构建..."
+	@echo "🚀 开始构建 Apple Silicon 版本..."
 	@mkdir -p $(BUILD_DIR)
-	@echo "📦 构建 macOS Intel (amd64)..."
-	@GOOS=darwin GOARCH=amd64 go build -o $(BUILD_DIR)/$(APP_NAME)-darwin-amd64 $(CMD_PATH)
-	@echo "✓ 完成: $(BUILD_DIR)/$(APP_NAME)-darwin-amd64"
 	@echo "📦 构建 macOS Apple Silicon (arm64)..."
 	@GOOS=darwin GOARCH=arm64 go build -o $(BUILD_DIR)/$(APP_NAME)-darwin-arm64 $(CMD_PATH)
 	@echo "✓ 完成: $(BUILD_DIR)/$(APP_NAME)-darwin-arm64"

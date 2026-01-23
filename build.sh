@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # 项目信息
 APP_NAME="submit-sitemap"
 VERSION="1.0.0"
-BUILD_DIR="build"
+BUILD_DIR="dist"
 CMD_PATH="./cmd/submit-sitemap"
 
 echo -e "${BLUE}================================${NC}"
@@ -41,23 +41,11 @@ else
     NATIVE_ARCH="amd64"
 fi
 
-echo -e "${YELLOW}📦 开始构建 macOS 版本...${NC}"
-echo ""
-
-# 构建 macOS Intel (amd64)
-echo -e "${BLUE}[1/3] 构建 macOS Intel (amd64)...${NC}"
-GOOS=darwin GOARCH=amd64 go build -o ${BUILD_DIR}/${APP_NAME}-darwin-amd64 ${CMD_PATH}
-if [ $? -eq 0 ]; then
-    SIZE=$(du -h ${BUILD_DIR}/${APP_NAME}-darwin-amd64 | cut -f1)
-    echo -e "${GREEN}✓ 构建成功: ${BUILD_DIR}/${APP_NAME}-darwin-amd64 (${SIZE})${NC}"
-else
-    echo -e "${RED}✗ 构建失败${NC}"
-    exit 1
-fi
+echo -e "${YELLOW}📦 开始构建 macOS Apple Silicon 版本...${NC}"
 echo ""
 
 # 构建 macOS Apple Silicon (arm64)
-echo -e "${BLUE}[2/3] 构建 macOS Apple Silicon (arm64)...${NC}"
+echo -e "${BLUE}[1/2] 构建 macOS Apple Silicon (arm64)...${NC}"
 GOOS=darwin GOARCH=arm64 go build -o ${BUILD_DIR}/${APP_NAME}-darwin-arm64 ${CMD_PATH}
 if [ $? -eq 0 ]; then
     SIZE=$(du -h ${BUILD_DIR}/${APP_NAME}-darwin-arm64 | cut -f1)
@@ -68,8 +56,8 @@ else
 fi
 echo ""
 
-# 构建通用版本（当前平台）
-echo -e "${BLUE}[3/3] 构建当前平台通用版本 (${NATIVE_ARCH})...${NC}"
+# 构建通用版本（Apple Silicon）
+echo -e "${BLUE}[2/2] 构建当前平台通用版本 (arm64)...${NC}"
 go build -o ${APP_NAME} ${CMD_PATH}
 if [ $? -eq 0 ]; then
     SIZE=$(du -h ${APP_NAME} | cut -f1)
@@ -102,14 +90,8 @@ echo ""
 echo -e "  当前平台直接运行:"
 echo -e "    ${GREEN}./${APP_NAME} help${NC}"
 echo ""
-echo -e "  或者使用指定架构版本:"
-if [ "$NATIVE_ARCH" = "arm64" ]; then
-    echo -e "    ${GREEN}./${BUILD_DIR}/${APP_NAME}-darwin-arm64 help${NC} (Apple Silicon)"
-    echo -e "    ${GREEN}./${BUILD_DIR}/${APP_NAME}-darwin-amd64 help${NC} (Intel Mac)"
-else
-    echo -e "    ${GREEN}./${BUILD_DIR}/${APP_NAME}-darwin-amd64 help${NC} (Intel Mac)"
-    echo -e "    ${GREEN}./${BUILD_DIR}/${APP_NAME}-darwin-arm64 help${NC} (Apple Silicon)"
-fi
+echo -e "  或者使用 dist 目录中的版本:"
+echo -e "    ${GREEN}./${BUILD_DIR}/${APP_NAME}-darwin-arm64 help${NC} (Apple Silicon)"
 echo ""
 echo -e "${BLUE}📦 版本信息：${NC}"
 echo -e "  版本: ${VERSION}"

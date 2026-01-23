@@ -25,8 +25,7 @@ Submit Sitemap - 项目文件清单
 
 构建产物（gitignore已忽略）：
   • submit-sitemap                     - 通用版本
-  • build/submit-sitemap-darwin-amd64  - Intel Mac
-  • build/submit-sitemap-darwin-arm64  - Apple Silicon
+  • dist/submit-sitemap-darwin-arm64   - Apple Silicon
 
 数据目录（gitignore已忽略）：
   • data/submitted/                    - 已提交URL记录
