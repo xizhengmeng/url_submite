@@ -42,6 +42,7 @@ type Sitemap struct {
 type Parser struct {
 	client  *http.Client
 	timeout time.Duration
+	verbose bool // 是否输出详细日志
 }
 
 // NewParser 创建新的解析器
@@ -51,11 +52,27 @@ func NewParser(timeout int) *Parser {
 			Timeout: time.Duration(timeout) * time.Second,
 		},
 		timeout: time.Duration(timeout) * time.Second,
+		verbose: false,
+	}
+}
+
+// NewParserWithVerbose 创建带详细日志的解析器
+func NewParserWithVerbose(timeout int, verbose bool) *Parser {
+	return &Parser{
+		client: &http.Client{
+			Timeout: time.Duration(timeout) * time.Second,
+		},
+		timeout: time.Duration(timeout) * time.Second,
+		verbose: verbose,
 	}
 }
 
 // Parse 解析sitemap URL
 func (p *Parser) Parse(sitemapURL string) ([]types.SitemapURL, error) {
+	if p.verbose {
+		fmt.Printf("📥 正在获取: %s\n", sitemapURL)
+	}
+
 	// 下载sitemap内容
 	content, err := p.fetch(sitemapURL)
 	if err != nil {
@@ -65,6 +82,9 @@ func (p *Parser) Parse(sitemapURL string) ([]types.SitemapURL, error) {
 	// 尝试解析为sitemap索引
 	var sitemapIndex SitemapIndex
 	if err := xml.Unmarshal(content, &sitemapIndex); err == nil && len(sitemapIndex.Sitemaps) > 0 {
+		if p.verbose {
+			fmt.Printf("✓ 识别为 Sitemap Index，包含 %d 个子 sitemap\n", len(sitemapIndex.Sitemaps))
+		}
 		return p.parseIndex(sitemapIndex)
 	}
 
@@ -74,6 +94,10 @@ func (p *Parser) Parse(sitemapURL string) ([]types.SitemapURL, error) {
 		return nil, fmt.Errorf("解析sitemap失败: %w", err)
 	}
 
+	if p.verbose {
+		fmt.Printf("✓ 识别为 URLSet，包含 %d 个URL\n", len(urlset.URLs))
+	}
+
 	return p.convertURLs(urlset.URLs), nil
 }
 
@@ -81,14 +105,30 @@ func (p *Parser) Parse(sitemapURL string) ([]types.SitemapURL, error) {
 func (p *Parser) parseIndex(index SitemapIndex) ([]types.SitemapURL, error) {
 	var allURLs []types.SitemapURL
 
-	for _, sitemap := range index.Sitemaps {
+	if p.verbose {
+		fmt.Printf("\n🔄 开始递归解析 %d 个子 sitemap...\n", len(index.Sitemaps))
+	}
+
+	for i, sitemap := range index.Sitemaps {
+		if p.verbose {
+			fmt.Printf("\n[%d/%d] ", i+1, len(index.Sitemaps))
+		}
+
 		urls, err := p.Parse(sitemap.Loc)
 		if err != nil {
 			// 记录错误但继续处理其他sitemap
-			fmt.Printf("警告: 解析子sitemap失败 (%s): %v\n", sitemap.Loc, err)
+			fmt.Printf("⚠️  警告: 解析子sitemap失败 (%s): %v\n", sitemap.Loc, err)
 			continue
 		}
 		allURLs = append(allURLs, urls...)
+
+		if p.verbose {
+			fmt.Printf("   累计 URL: %d\n", len(allURLs))
+		}
+	}
+
+	if p.verbose {
+		fmt.Printf("\n✅ 递归解析完成！总计找到 %d 个URL\n\n", len(allURLs))
 	}
 
 	return allURLs, nil
